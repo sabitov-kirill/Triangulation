@@ -1,0 +1,6 @@
+Debug
+lib
+include
+.vs
+x64        
+*.dll
