@@ -25,7 +25,7 @@ private:
     {
       st = vec2((FLT)X / W * 2 - 1, -(FLT)Y / H * 2 + 1);
       IsSegmentStarted = !IsPrimitiveStarted ||
-                         FindNearestPointToPoints(st, nullptr);
+                         FindPoint(st, FALSE, nullptr);
       IsPrimitiveStarted = TRUE;
     }
     if (Button == GLUT_RIGHT_BUTTON && State == GLUT_UP && IsSegmentStarted)

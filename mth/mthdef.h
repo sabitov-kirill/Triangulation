@@ -18,6 +18,7 @@ namespace mth
   // PI constant
   const DBL PI = 3.14159265358979323846;
 
+
   // Getting smallest number function
   template <typename T>
   T Min( T Num1, T Num2 )

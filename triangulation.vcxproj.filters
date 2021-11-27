@@ -60,12 +60,18 @@
     <ClInclude Include="location.h">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClInclude>
+    <ClInclude Include="location_points_pool.h">
+      <Filter>Source Files\Location Editor Handle</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="location.cpp">
+      <Filter>Source Files\Location Editor Handle</Filter>
+    </ClCompile>
+    <ClCompile Include="location_points_pool.cpp">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClCompile>
   </ItemGroup>

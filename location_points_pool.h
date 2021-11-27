@@ -31,17 +31,6 @@ public:
    */
   BOOL Get( const vec2 &Pnt, size_t *Result, DBL CheckRadius = Epsilon ) const;
 
-  /* Get point index in points pool.
-   * ARGUMENTS:
-   *   - point to get index of:
-   *       const vec2 &Pnt;
-   * - variable to set index of point in:
-   *       seze_t *Result;
-   * RETURNS:
-   *   (size_t) point index;
-   */
-  BOOL operator()( const vec2 &Pnt, size_t *Result ) const;
-
   /* Get point rvalue by index.
    * ARGUMETNS:
    *   - index:

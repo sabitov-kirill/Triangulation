@@ -1,6 +1,6 @@
 #include "location_points_pool.h"
 
-const DBL points_pool::Epsilon = 0.01;               // Epsilon of point finding
+const DBL points_pool::Epsilon = 0.00001;            // Epsilon of point finding
 const DBL points_pool::Epsilon2 = Epsilon * Epsilon; // Epsilon sqared
 
 /* Get point index in points pool.
@@ -36,20 +36,6 @@ BOOL points_pool::Get( const vec2 &Pnt, size_t *Result, DBL CheckRadius ) const
 
   return TRUE;
 } /* End of 'points_pool::Get' function */
-
-/* Get point index in points pool.
- * ARGUMENTS:
- *   - point to get index of:
- *       const vec2 &Pnt;
- * - variable to set index of point in:
- *       seze_t *Result;
- * RETURNS:
- *   (size_t) point index;
- */
-BOOL points_pool::operator()( const vec2 &Pnt, size_t *Result ) const
-{
-  Get(Pnt, Result);
-} /* End of 'points_pool::operator()' function */
 
 /* Get point rvalue by index.
  * ARGUMETNS:

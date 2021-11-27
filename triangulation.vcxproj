@@ -148,10 +148,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="location.cpp" />
+    <ClCompile Include="location_points_pool.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="def.h" />
+    <ClInclude Include="location_points_pool.h" />
     <ClInclude Include="mth\mth.h" />
     <ClInclude Include="mth\mthdef.h" />
     <ClInclude Include="mth\mth_camera.h" />

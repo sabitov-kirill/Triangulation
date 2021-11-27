@@ -1,12 +1,7 @@
 #ifndef __location_h_
 #define __location_h_
 
-#include "def.h"
-
-/* Points pool class. */
-class points_pool
-{
-}; /* end of 'points_pool' class */
+#include "location_points_pool.h"
 
 /* Pollygon segment class. */
 class segment
@@ -33,51 +28,81 @@ public:
    * ARGUMENTS:
    *   - point:
    *       const vec2 &Pnt;
-   *   - two points, setting line:
-   *       const vec2 &LineP1, &LineP2;
    * RETURNS:
    *   (FLT) distance between point and line.
    */
-  static FLT GetPointLineDistance( const vec2 &Pnt, const vec2 &LineP1, const vec2 &LineP2 );
+  FLT GetPointDistance( const vec2 &Pnt ) const;
+
+  /* Check if point lie on segment. If set Check radius check in that area.
+   * ARGUMENTS:
+   *   - point to check:
+   *       const vec2 &Pnt;
+   *   - checking area radius:
+   *       DBL CheckRadius;
+   *   - variable to set point on segment if cheking radius was given:
+   *       vec2 *Result;
+   * RETURNS:
+   *   (DBL) distance to the line. If no lines nearby - 0.
+   */
+  DBL IsPointOnSegment( const vec2 &Pnt, DBL CheckRadius = 0, vec2 *Result = nullptr ) const;
 
   /* Get location of a point in a plane relative to a straight line function.
    * ARGUMENTS:
    *   - point:
    *       const vec2 &Pnt;
-   *   - two points, setting line:
-   *       const vec2 &LineP1, &LineP2;
    * RETURNS:
    *   (INT) -1 - point is on the right half-plane,
    *          0 - point is on the line,
    *          1 - point in on the left half-plane.
    */
-  static INT GetPointHalfPlaneLocation( const vec2 &Pnt, const vec2 &LineP1, const vec2 &LineP2 );
+  INT GetPointHalfPlaneLocation( const vec2 &Pnt ) const;
 
   /* Intersect two lines function.
    * ARGUMENTS:
-   *   - two points, setting first line:
+   *   - two points, setting line to intersect with:
    *       const vec2 &P0, const vec2 &P1;
-   *   - two points, setting second line:
-   *       const vec2 &P2, const vec2 &P3;
    *   - variable to set result in:
    *       vec2 *Result;
    * RETURNS:
    *   (BOOL) Whether lines intersected or not.
    */
-  static BOOL LinesIntersect( const vec2 &P0, const vec2 &P1, const vec2 &P2, const vec2 &P3, vec2 *Result = nullptr );
+  BOOL LinesIntersect( const vec2 &P0, const vec2 &P1, vec2 *Result = nullptr ) const;
 }; /* end of 'segment' class */
 
 /* Pollygon class. */
-struct pollygon
+class pollygon
 {
+public:
   std::vector<segment> Lines; // Pollygon side lines container
+
+  /* Merge pollygons function.
+   * ARGUMENTS:
+   *   - pollygon to merge with:
+   *       const pollygon &Polly1, const pollygon &Polly2;
+   *   - pollygon to set merged one in:
+   *       pollygon *Merged;
+   * RETURNS: None.
+   */
+  VOID Merge( const pollygon &Polly, pollygon *Merged ) const;
+
+  /* Check if point inside pollygon.
+   * ARGUMENTS:
+   *   - point to check:
+   *       const vec3 &Pnt;
+   * RETURNS:
+   *   (BOOL) whether point in pollygon or not.
+   */
+  BOOL IsPointInside( const vec2 &Pnt ) const;
 }; /* end of 'pollygon' struct */
 
 /* Location representation class. */
 class location
 {
 private:
-  mutable std::vector<vec2> PointsPool; // All location points pool
+  friend class segment;
+  friend class pollygon;
+
+  static points_pool PointsPool; // All location points pool
 
   /* State of currently editing pollygon */
   struct current_pollygon : pollygon
@@ -88,10 +113,9 @@ private:
     size_t Start = 0;
   } CurrentPolly {}; /* end of 'current_pollygon' struct */
   
-  const DBL Epsilon = 0.01;               // Epsilon of point finding
-  const DBL Epsilon2 = Epsilon * Epsilon; // Epsilon sqared
+  const DBL PlaceingRadius = 0.05; // Points  for segments placment radius
 
-  public:
+public:
   // For test public, remove later
   std::vector<pollygon> Walls; // Location walls
 
@@ -99,80 +123,29 @@ private:
   // Points pool functions
   //
 
-  /* Get point index in points pool.
+  /* Find point function.
    * ARGUMENTS:
-   *   - point to get index of:
+   *   - point to find:
    *       const vec2 &Pnt;
-   * - variable to set index of point in:
-   *       seze_t *Result;
-   * RETURNS:
-   *   (size_t) point index;
-   */
-  BOOL GetPointIndex( const vec2 &Pnt, size_t *Result ) const;
-
-  /* Find aproximate point in pool function.
-   * ARGUMETNS:
-   *   - point to find:
-   *       const vec2 &Pnt
-   *   - variable to set found point in:
-   *       vec2 *Result;
-   * RETURNS:
-   *   (BOOL) whether point found or not.
-   */
-  BOOL FindNearestPointToPoints( const vec2 &Point, vec2 *Result = nullptr ) const;
-
-  /* Find aproximate point in wall segments.
-   * ARGUMETNS:
-   *   - point to find:
-   *       const vec2 &Pnt
-   *   - variable to set found point in:
-   *       vec2 *Result;
-   * RETURNS:
-   *   (BOOL) whether point found or not.
-   */
-  BOOL FindNearestPointToSegments( const vec2 &Point, vec2 *Result = nullptr ) const;
-
-  /* Find aproximate point on neares segments or points.
-   * ARGUMETNS:
-   *   - point to find:
-   *       const vec2 &Pnt
+   *   - should try to find nearest point on segments:
+   *       BOOL FindOnLines;
    *   - variable to set index of found point in:
-   *       vec2 *Result;
+   *       size_t *Result; 
    * RETURNS:
-   *   (BOOL) whether point found or not.
+   *   (BOOL) wheather point found or not.
    */
-  BOOL FindNearestPoint( const vec2 &Point, vec2 *Result = nullptr ) const;
+  BOOL FindPoint( const vec2 &Pnt, BOOL FindOnLines, size_t *Result ) const;
 
   /* Add point to the pool or return existing.
    * ARGUMENTS:
    *   - point to add:
    *       const vec2 &Pnt;
+   *   - should try to find nearest point on segments:
+   *       BOOL ConnectToLines;
    * RETURNS:
    *   (size_t) index of added or found point in pool.
    */
-  size_t PlacePoint( const vec2 &Pnt ) const;
-
-  /* Place or find existing point.
-   * ARGUMENTS:
-   *   - point to add or find:
-   *       const vec2 &Pnt;
-   * RETURNS:
-   *   (size_t) index of added or found point in pool.
-   */
-  size_t PlaceOrFindPoint( const vec2 &Pnt ) const;
-
-  /* Place or find existing point.
-   * ARGUMENTS:
-   *   - point to add or find:
-   *       const vec2 &Pnt;
-   * RETURNS:
-   *   (size_t) index of added or found point in pool.
-   */
-  size_t PlaceOrFindPointToPoint( const vec2 &Pnt ) const;
-
-  //
-  // Pollygons functions
-  //
+  size_t PlacePoint( const vec2 &Pnt, BOOL ConnectToLines );
 
   /* Add segment to walls location container.
    * ARGUMENTS:
@@ -190,25 +163,6 @@ private:
    * RETURNS: None.
    */
   VOID SetCurrentPollygonCloseMode( BOOL ShouldMerge );
-
-  /* Merge pollygons function.
-   * ARGUMENTS:
-   *   - pollygon to merge with:
-   *       const pollygon &Polly1, const pollygon &Polly2;
-   *   - pollygon to set merged one in:
-   *       pollygon *Merged;
-   * RETURNS: None.
-   */
-  VOID MergePolly( const pollygon &Polly1, const pollygon &Polly2, pollygon *Merged ) const;
-
-  /* Check if point inside pollygon.
-   * ARGUMENTS:
-   *   - point to check:
-   *       const vec3 &Pnt;
-   * RETURNS:
-   *   (BOOL) whether point in pollygon or not.
-   */
-  BOOL IsPointInsidePolly( const vec2 &Pnt, const pollygon &Polly ) const;
 
   //
   // Render functions
