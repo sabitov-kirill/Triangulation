@@ -281,8 +281,7 @@ VOID pollygon::Merge( const pollygon &Polly, pollygon *Merged ) const
 
     for (size_t i = 1, cnt = curr_vertex->second.size(); i < cnt; i++)
       if ((curr_vertex->second[i] != prev && curr_vertex->second[i] != next && curr_vertex->second[i] != curr &&
-           segment(curr, next).GetPointHalfPlaneLocation(location::PointsPool[curr_vertex->second[i]]) == 1) ||
-          next == prev)
+           segment(curr, next).GetPointHalfPlaneLocation(location::PointsPool[curr_vertex->second[i]]) == 1) || next == prev)
       {
         next_pnt = location::PointsPool[curr_vertex->second[i]];
         next = curr_vertex->second[i];
@@ -330,53 +329,94 @@ BOOL pollygon::IsPointInside( const vec2 &Pnt ) const
  * RETURNS:
  *   (BOOL) wheather point found or not.
  */
-BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, size_t *Result ) const
+BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result ) const
 {
   if (!FindOnLines)
-    return PointsPool.Get(Pnt, Result, PlaceingRadius);
+  {
+    size_t index;
+    BOOL is_found = PointsPool.Get(Pnt, &index, PlaceingRadius);
+    if (is_found)
+    {
+      if (Result != nullptr)
+        *Result = PointsPool[index];
+      return TRUE;
+    }
+    return is_found;
+  }
   else
   {
-    if (PointsPool.Get(Pnt, Result, PlaceingRadius))
-      return TRUE;
-
-  vec2 min_dist_pnt;
-  DBL min_dist = PlaceingRadius;
-
-  // Check if point lies on one of existing segment
-  const auto CheckIfLieOnSegment = [&]( const pollygon &Polly )
-  {
-    for (size_t i = 0, cnt = CurrentPolly.Lines.size(); i < cnt; i++)
+    size_t index;
+    BOOL is_found = PointsPool.Get(Pnt, &index, PlaceingRadius);
+    if (is_found)
     {
-      vec2 L1 = PointsPool[CurrentPolly.Lines[i].St], L2 = PointsPool[CurrentPolly.Lines[i].End];
+      if (Result != nullptr)
+        *Result = PointsPool[index];
+      return TRUE;
+    }
 
-      // Check if distance to line less then epsilon
-      DBL dist = CurrentPolly.Lines[i].GetPointDistance(Pnt);
-      if (dist < min_dist)
+    vec2 min_dist_pnt;
+    DBL min_dist = PlaceingRadius;
+
+    // Check if point lies on one of existing segment
+    const auto CheckIfLieOnSegment = [&]( const pollygon &Polly )
+    {
+      for (size_t i = 0, cnt = Polly.Lines.size(); i < cnt; i++)
       {
-        // Check if point lies between two points
-        DBL t = (Pnt - L1) / (L2 - L1);
-        if (t >= 0 && t <= 1)
+        vec2 L1 = PointsPool[Polly.Lines[i].St], L2 = PointsPool[Polly.Lines[i].End];
+
+        vec2 Line = L2 - L1;
+        vec2 N = -vec2(Line[1], -Line[0]).Normalize() * Polly.Lines[i].GetPointHalfPlaneLocation(Pnt);
+        DBL dist = N & (Pnt - L1);
+
+        if (dist < min_dist)
         {
-          vec2 N = vec2(L1[1], -L1[0]).Normalizing() * CurrentPolly.Lines[i].GetPointHalfPlaneLocation(Pnt);
-          min_dist_pnt = Pnt - N * (FLT)dist;
-          min_dist = dist;
+          // Check if point lies between two points
+          DBL t = (L1 - Pnt) & (L1 - L2);
+          DBL len = (L2 - L1).Length();
+          if (t < len && t > 0)
+          {
+            min_dist_pnt = Pnt - N * (FLT)dist;
+            min_dist = dist;
+          }
         }
       }
-    }
-  };
+    };
 
-  for (const auto &polly: Walls)
-    CheckIfLieOnSegment(polly);
-  CheckIfLieOnSegment(CurrentPolly);
+    for (const auto &polly: Walls)
+      CheckIfLieOnSegment(polly);
+    CheckIfLieOnSegment(CurrPoly);
 
-  if (min_dist == PlaceingRadius)
-    return FALSE;
+    if (min_dist == PlaceingRadius)
+      return FALSE;
 
-  if (Result != nullptr)
-    *Result = PointsPool.Add(min_dist_pnt);
+    if (Result != nullptr)
+      *Result = min_dist_pnt;
 
-  return TRUE;
+    return TRUE;
   }
+} /* End of 'location::FindPoint' function */
+
+/* Find point function.
+ * ARGUMENTS:
+ *   - point to find:
+ *       const vec2 &Pnt;
+ *   - should try to find nearest point on segments:
+ *       BOOL FindOnLines;
+ *   - variable to set index of found point in:
+ *       size_t *Result; 
+ * RETURNS:
+ *   (BOOL) wheather point found or not.
+ */
+BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, size_t *Result ) const
+{
+  vec2 found_pnt;
+  if (FindPoint(Pnt, FindOnLines, &found_pnt))
+  {
+    if (Result != nullptr)
+      *Result = PointsPool.Add(found_pnt);
+    return TRUE;
+  }
+  return FALSE;
 } /* End of 'location::FindPoint' function */
 
 /* Add point to the pool or return existing.
@@ -408,46 +448,58 @@ size_t location::PlacePoint( const vec2 &Pnt, BOOL ConnectToLines )
  * RETURNS:
  *   (BOOL) whether added segment closed current pollygon.
  */
-BOOL location::PlaceSegment( const vec2 &PntEnd, const vec2 &PntSt )
+BOOL location::CurrPolyPlaceSegment( const vec2 &PntEnd, const vec2 &PntSt )
 {
   size_t SegmentStart, SegmentEnd;
   BOOL IsClosed = FALSE;
 
-  if (CurrentPolly.IsEditing)
+  // Adding segments to exitsting pollygon
+  if (CurrPoly.IsEditing)
   {
-    SegmentStart = CurrentPolly.Lines[CurrentPolly.Lines.size() - 1].End;
+    SegmentStart = CurrPoly.Lines[CurrPoly.Lines.size() - 1].End;
 
+    // End point of segment is found
     if (PointsPool.Get(PntEnd, &SegmentEnd, PlaceingRadius))
     {
-      CurrentPolly.Lines.push_back(segment(SegmentStart, SegmentEnd));
+      CurrPoly.Lines.push_back(segment(SegmentStart, SegmentEnd));
 
       // If segment ends on its start point closing them.
-      if (SegmentEnd == CurrentPolly.Start)
+      if (SegmentEnd == CurrPoly.Start)
       {
+        // Mergin current pollygon with existing
         if (Walls.size() == 0)
-          Walls.push_back(CurrentPolly);
-        else
-          CurrentPolly.Merge(Walls[0], &Walls[0]);
+          Walls.push_back(CurrPoly);
+        else if (CurrPoly.ShouldMerge)
+          CurrPoly.Merge(Walls[0], &Walls[0]);
 
-        CurrentPolly = current_pollygon();
+        // Reseting current pollygon, but save close mode.
+        BOOL should_merge = CurrPoly.ShouldMerge;
+        CurrPoly = current_pollygon();
+        CurrPoly.ShouldMerge = should_merge;
         return TRUE;
       }
     }
+    // End point of segment is not found
     else
+    {
       SegmentEnd = PlacePoint(PntEnd, TRUE);
+      CurrPoly.Lines.push_back(segment(SegmentStart, SegmentEnd));
+    }
   }
+  // Adding first segment to pollygon
   else
   {
     SegmentStart = PlacePoint(PntSt, TRUE);
     SegmentEnd = PlacePoint(PntEnd, TRUE);
 
-    CurrentPolly.IsEditing = TRUE;
-    CurrentPolly.Start = SegmentStart;
+    CurrPoly.IsEditing = TRUE;
+    CurrPoly.Start = SegmentStart;
+
+    CurrPoly.Lines.push_back(segment(SegmentStart, SegmentEnd));
   }
 
-  CurrentPolly.Lines.push_back(segment(SegmentStart, SegmentEnd));
   return FALSE;
-} /* End of 'location::PlaceSegment' function */
+} /* End of 'location::CurrPolyPlaceSegment' function */
 
 /* Set current pollygon close mode.
  * ARGUMENTS:
@@ -455,10 +507,10 @@ BOOL location::PlaceSegment( const vec2 &PntEnd, const vec2 &PntSt )
  *       BOOL ShouldMerge;
  * RETURNS: None.
  */
-VOID location::SetCurrentPollygonCloseMode( BOOL ShouldMerge )
+VOID location::CurrPolySetCloseMode( BOOL ShouldMerge )
 {
-  CurrentPolly.ShouldMerge = ShouldMerge;
-} /* End of 'location::SetCurrentPollygonCloseMode' function */
+  CurrPoly.ShouldMerge = ShouldMerge;
+} /* End of 'location::SetCurrPolygonCloseMode' function */
 
 /*
  * Function that handles the drawing of a circle using the line loop
@@ -514,5 +566,5 @@ VOID location::Draw( VOID ) const
 
   for (const auto &wall: Walls)
     DrawPolly(wall, FALSE);
-  DrawPolly(CurrentPolly, TRUE);
+  DrawPolly(CurrPoly, TRUE);
 } /* End pf 'location::Draw' function */

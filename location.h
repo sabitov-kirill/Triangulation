@@ -102,18 +102,17 @@ private:
   friend class segment;
   friend class pollygon;
 
-  static points_pool PointsPool; // All location points pool
-
-  /* State of currently editing pollygon */
+  /* Currently editing pollygon structure. */
   struct current_pollygon : pollygon
   {
     BOOL IsEditing = 0;   // Displays if first segment of primitive added
+    size_t Start = 0;     // Index of first point in pollygon
     BOOL ShouldMerge = 1; // Displays should pollygon be merged after closing
+  }; /* end of 'current_pollygon' struct */
 
-    size_t Start = 0;
-  } CurrentPolly {}; /* end of 'current_pollygon' struct */
-  
-  const DBL PlaceingRadius = 0.05; // Points  for segments placment radius
+  static points_pool PointsPool;   // All location points pool
+  const DBL PlaceingRadius = 0.1; // Points  for segments placment radius
+  current_pollygon CurrPoly {};    // Currently editing pollygon
 
 public:
   // For test public, remove later
@@ -122,6 +121,19 @@ public:
   //
   // Points pool functions
   //
+
+  /* Find point function.
+   * ARGUMENTS:
+   *   - point to find:
+   *       const vec2 &Pnt;
+   *   - should try to find nearest point on segments:
+   *       BOOL FindOnLines;
+   *   - variable to set index of found point in:
+   *       vec2 *Result; 
+   * RETURNS:
+   *   (BOOL) wheather point found or not.
+   */
+  BOOL FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result = nullptr ) const;
 
   /* Find point function.
    * ARGUMENTS:
@@ -147,14 +159,118 @@ public:
    */
   size_t PlacePoint( const vec2 &Pnt, BOOL ConnectToLines );
 
-  /* Add segment to walls location container.
+  //
+  // Current pollygon functions
+  //
+
+  /* Get index of end point of last segment in current pollygon function.
+   * ARGUMENTS: None.
+   * RETURNS:
+   *   (vec2) end point of last segment in current pollygon.
+   */
+  size_t CurrPolyLastLineEndIndex(VOID)
+  {
+    return CurrPoly.Lines[CurrPoly.Lines.size() - 1].End;
+  } /* End of 'GetLastLineEndIndex' function */
+
+  /* Get end point of last segment in current pollygon function.
+   * ARGUMENTS: None.
+   * RETURNS:
+   *   (vec2) end point of last segment in current pollygon.
+   */
+  vec2 CurrPolyLastLineEnd( VOID )
+  {
+    return PointsPool[CurrPolyLastLineEndIndex()];
+  } /* End of 'GetLastLineEnd' function */
+
+  /* Get start point of last segment in current pollygon function.
+   * ARGUMENTS: None.
+   * RETURNS:
+   *   (vec2) end point of last segment in current pollygon.
+   */
+  size_t CurrPolyLastLineStartIndex( VOID )
+  {
+    return CurrPoly.Lines[CurrPoly.Lines.size() - 1].St;
+  } /* End of 'GetLastLineStart' function */
+
+  /* Get start point of last segment in current pollygon function.
+   * ARGUMENTS: None.
+   * RETURNS:
+   *   (vec2) end point of last segment in current pollygon.
+   */
+  vec2 CurrPolyGetLastLineStart( VOID )
+  {
+    return PointsPool[CurrPolyLastLineStartIndex()];
+  } /* End of 'GetLastLineStart' function */
+
+  /* Get count of lines in current pollygon.
+   * ARGUMENTS: None.
+   * RETURNS:
+   *   (size_t) count of lines in current pollygon.
+   */
+  size_t CurrPolyLinesSize( VOID )
+  {
+    return CurrPoly.Lines.size();
+  } /* End of 'GetLinesSize' function */
+
+  /* Add segment to current pollygon function.
    * ARGUMENTS:
    *   - point of line end:
    *       const vec2 &PntEnd;
    * RETURNS:
    *   (BOOL) whether added segment closed current pollygon.
    */
-  BOOL PlaceSegment( const vec2 &PntEnd, const vec2 &PntSt = {0} );
+  BOOL CurrPolyPlaceSegment( const vec2 &PntEnd, const vec2 &PntSt = {0} );
+
+  /* Get perpendicular point to last segment function.
+   * ARGUMENTS:
+   *   - point to create perpendicular in direction of:
+   *       FLT X, FLT Y;
+   * RETURNS:
+   *   (vec2) end of perpendicular segment.
+   */
+  vec2 CurrPolyGetPerpPoint( FLT X, FLT Y )
+  {
+    INT rotation;
+    segment last_seg = CurrPoly.Lines[CurrPoly.Lines.size() - 1];
+    vec2
+      norm,
+      last_line = vec2(PointsPool[last_seg.End][0] - PointsPool[last_seg.St][0],
+                       PointsPool[last_seg.End][1] - PointsPool[last_seg.St][1]);
+
+    rotation = last_seg.GetPointHalfPlaneLocation(vec2(X, Y)) ? 3 : 1;
+
+    // Create normal to last segment in direction of point
+    for (INT i = 0; i < rotation; i++)
+    {
+      norm = vec2(-last_line[1], last_line[0]);
+      last_line = norm;
+    }
+    norm.Normalize();
+
+    // Set length of normal
+    norm *= (vec2(X, Y) - PointsPool[last_seg.End]).Length();
+    norm += PointsPool[last_seg.End];
+   
+    return norm;
+  } /* End of 'CurrPolyGetPerpPoint' function */
+
+  /* Destroy last segment in current pollygon function.
+   * ARGUMENTS: None.
+   * RETURNS: None.
+   */
+  VOID CurrPolyDestroyLastSegment( VOID )
+  {
+    size_t l = CurrPoly.Lines.size(), p = PointsPool.Points.size();
+
+    // If end point of last segment is used only in last line delete it point
+    if (p > 2 && p > l + 2 && CurrPolyLastLineEndIndex() == p - 1)
+      PointsPool.Points.pop_back();
+
+    // Delete segment
+    if (l > 0)
+      CurrPoly.Lines.pop_back();
+  } /* End of 'DestroyLastSegment' function */
 
   /* Set current pollygon close mode.
    * ARGUMENTS:
@@ -162,11 +278,17 @@ public:
    *       BOOL ShouldMerge;
    * RETURNS: None.
    */
-  VOID SetCurrentPollygonCloseMode( BOOL ShouldMerge );
+  VOID CurrPolySetCloseMode( BOOL ShouldMerge );
 
   //
-  // Render functions
+  // Location functions
   //
+
+  /* Optimize point pool function. Deletes all unused points.
+   * ARGUMENTS: None.
+   * RETURNS: None.
+   */
+  VOID OptimizePointsPool( VOID );
 
   /* Draw wall location function.
    * ARGUMENTS: None.

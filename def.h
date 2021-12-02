@@ -17,7 +17,7 @@
 #include "mth/mth_matr.h"
 
 typedef mth::vec2<FLT> vec2;
-typedef mth::vec4<FLT> vec3;
-typedef mth::vec3<FLT> vec4;
+typedef mth::vec3<FLT> vec3;
+typedef mth::vec4<FLT> vec4;
 
 #endif /* __def_h_ */

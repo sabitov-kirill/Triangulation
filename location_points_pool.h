@@ -3,10 +3,15 @@
 
 #include "def.h"
 
+// Forward declaration
+class location;
+
 /* Location representation class. */
 class points_pool
 {
 private:
+  friend class location;
+
   std::vector<vec2> Points; // All location_points_pool points pool
 
   static const DBL Epsilon;  // Epsilon of point finding
