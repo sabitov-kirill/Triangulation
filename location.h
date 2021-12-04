@@ -57,16 +57,29 @@ public:
    */
   INT GetPointHalfPlaneLocation( const vec2 &Pnt ) const;
 
+  /* Get location of a point in a plane relative to a straight line function.
+   * ARGUMENTS:
+   *   - point:
+   *       const vec2 &Pnt;
+   * RETURNS:
+   *   (INT) -1 - point is on the right half-plane,
+   *          0 - point is on the line,
+   *          1 - point in on the left half-plane.
+   */
+  static INT GetPointHalfPlaneLocation( const vec2 &Pnt, const vec2 &L1, const vec2 &L2 );
+
   /* Intersect two lines function.
    * ARGUMENTS:
    *   - two points, setting line to intersect with:
    *       const vec2 &P0, const vec2 &P1;
    *   - variable to set result in:
    *       vec2 *Result;
+   *   - should check length of intersecting lines or not:
+   *       BOOL CheckLength;
    * RETURNS:
    *   (BOOL) Whether lines intersected or not.
    */
-  BOOL LinesIntersect( const vec2 &P0, const vec2 &P1, vec2 *Result = nullptr ) const;
+  BOOL LinesIntersect( const vec2 &P0, const vec2 &P1, vec2 *Result = nullptr, BOOL CheckLength = TRUE ) const;
 }; /* end of 'segment' class */
 
 /* Pollygon class. */
@@ -168,9 +181,12 @@ public:
    * RETURNS:
    *   (vec2) end point of last segment in current pollygon.
    */
-  size_t CurrPolyLastLineEndIndex(VOID)
+  size_t CurrPolyLastLineEndIndex(VOID) const
   {
-    return CurrPoly.Lines[CurrPoly.Lines.size() - 1].End;
+    size_t count = CurrPoly.Lines.size();
+    if (count > 0)
+      return CurrPoly.Lines[CurrPoly.Lines.size() - 1].End;
+    return 0;
   } /* End of 'GetLastLineEndIndex' function */
 
   /* Get end point of last segment in current pollygon function.
@@ -178,7 +194,7 @@ public:
    * RETURNS:
    *   (vec2) end point of last segment in current pollygon.
    */
-  vec2 CurrPolyLastLineEnd( VOID )
+  vec2 CurrPolyLastLineEnd( VOID ) const
   {
     return PointsPool[CurrPolyLastLineEndIndex()];
   } /* End of 'GetLastLineEnd' function */
@@ -188,7 +204,7 @@ public:
    * RETURNS:
    *   (vec2) end point of last segment in current pollygon.
    */
-  size_t CurrPolyLastLineStartIndex( VOID )
+  size_t CurrPolyLastLineStartIndex( VOID ) const
   {
     return CurrPoly.Lines[CurrPoly.Lines.size() - 1].St;
   } /* End of 'GetLastLineStart' function */
@@ -198,7 +214,7 @@ public:
    * RETURNS:
    *   (vec2) end point of last segment in current pollygon.
    */
-  vec2 CurrPolyGetLastLineStart( VOID )
+  vec2 CurrPolyLastLineStart( VOID ) const
   {
     return PointsPool[CurrPolyLastLineStartIndex()];
   } /* End of 'GetLastLineStart' function */
@@ -208,7 +224,7 @@ public:
    * RETURNS:
    *   (size_t) count of lines in current pollygon.
    */
-  size_t CurrPolyLinesSize( VOID )
+  size_t CurrPolyLinesSize( VOID ) const
   {
     return CurrPoly.Lines.size();
   } /* End of 'GetLinesSize' function */
@@ -225,31 +241,27 @@ public:
   /* Get perpendicular point to last segment function.
    * ARGUMENTS:
    *   - point to create perpendicular in direction of:
-   *       FLT X, FLT Y;
+   *       vec2 Point;
    * RETURNS:
    *   (vec2) end of perpendicular segment.
    */
-  vec2 CurrPolyGetPerpPoint( FLT X, FLT Y )
+  vec2 CurrPolyGetPerpPoint( vec2 Point ) const
   {
-    INT rotation;
     segment last_seg = CurrPoly.Lines[CurrPoly.Lines.size() - 1];
     vec2
       norm,
       last_line = vec2(PointsPool[last_seg.End][0] - PointsPool[last_seg.St][0],
                        PointsPool[last_seg.End][1] - PointsPool[last_seg.St][1]);
 
-    rotation = last_seg.GetPointHalfPlaneLocation(vec2(X, Y)) ? 3 : 1;
-
-    // Create normal to last segment in direction of point
-    for (INT i = 0; i < rotation; i++)
-    {
+    if (last_seg.GetPointHalfPlaneLocation(Point) == 1)
       norm = vec2(-last_line[1], last_line[0]);
-      last_line = norm;
-    }
+    else
+      norm = vec2(last_line[1], -last_line[0]);
+
     norm.Normalize();
 
     // Set length of normal
-    norm *= (vec2(X, Y) - PointsPool[last_seg.End]).Length();
+    norm *= (Point - PointsPool[last_seg.End]) & norm;
     norm += PointsPool[last_seg.End];
    
     return norm;

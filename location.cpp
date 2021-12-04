@@ -50,6 +50,23 @@ INT segment::GetPointHalfPlaneLocation( const vec2 &Pnt ) const
           cross_product < 0.00001 ? -1 : 0;
 } /* End of 'segment::GetPointHalfPlane' function */
 
+/* Get location of a point in a plane relative to a straight line function.
+ * ARGUMENTS:
+ *   - point:
+ *       const vec2 &Pnt;
+ * RETURNS:
+ *   (INT) -1 - point is on the right half-plane,
+ *          0 - point is on the line,
+ *          1 - point in on the left half-plane.
+ */
+INT segment::GetPointHalfPlaneLocation( const vec2 &Pnt, const vec2 &L1, const vec2 &L2 )
+{
+  DBL cross_product = ((DBL)L2[0] - (DBL)L1[0]) * ((DBL)Pnt[1] - (DBL)L1[1]) -
+                      ((DBL)L2[1] - (DBL)L1[1]) * ((DBL)Pnt[0] - (DBL)L1[0]);
+  return  cross_product > 0.00001 ?  1 :
+          cross_product < 0.00001 ? -1 : 0;
+} /* End of 'segment::GetPointHalfPlane' function */
+
 /* Check if point lie on segment. If set Check radius check in that area.
  * ARGUMENTS:
  *   - point to check:
@@ -106,10 +123,12 @@ DBL segment::IsPointOnSegment( const vec2 &Pnt, DBL CheckRadius, vec2 *Result ) 
  *       const vec2 &P0, const vec2 &P1;
  *   - variable to set result in:
  *       vec2 *Result;
+ *   - should check length of intersecting lines or not:
+ *       BOOL CheckLength;
  * RETURNS:
  *   (BOOL) Whether lines intersected or not.
  */
-BOOL segment::LinesIntersect( const vec2 &P0, const vec2 &P1, vec2 *Result ) const
+BOOL segment::LinesIntersect( const vec2 &P0, const vec2 &P1, vec2 *Result, BOOL CheckLength ) const
 {
   FLT
     t =
@@ -119,7 +138,7 @@ BOOL segment::LinesIntersect( const vec2 &P0, const vec2 &P1, vec2 *Result ) con
       ((P0[0] - location::PointsPool[St][0]) * (P0[1] - P1[1]) - (P0[1] - location::PointsPool[St][1]) * (P0[0] - P1[0])) /
       ((P0[0] - P1[0]) * (location::PointsPool[St][1] - location::PointsPool[End][1]) - (P0[1] - P1[1]) * (location::PointsPool[St][0] - location::PointsPool[End][0]));
 
-  if (t < 0 || t > 1 || s < 0 || s > 1)
+  if ((t < 0 || t > 1 || s < 0 || s > 1) && CheckLength)
     return FALSE;
 
   if (Result != nullptr) 
@@ -354,12 +373,13 @@ BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result ) cons
       return TRUE;
     }
 
-    vec2 min_dist_pnt;
-    DBL min_dist = PlaceingRadius;
+    vec2 inter;
+    BOOL IsInters = FALSE;
 
     // Check if point lies on one of existing segment
     const auto CheckIfLieOnSegment = [&]( const pollygon &Polly )
     {
+      DBL min_dist = PlaceingRadius;
       for (size_t i = 0, cnt = Polly.Lines.size(); i < cnt; i++)
       {
         vec2 L1 = PointsPool[Polly.Lines[i].St], L2 = PointsPool[Polly.Lines[i].End];
@@ -368,17 +388,8 @@ BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result ) cons
         vec2 N = -vec2(Line[1], -Line[0]).Normalize() * Polly.Lines[i].GetPointHalfPlaneLocation(Pnt);
         DBL dist = N & (Pnt - L1);
 
-        if (dist < min_dist)
-        {
-          // Check if point lies between two points
-          DBL t = (L1 - Pnt) & (L1 - L2);
-          DBL len = (L2 - L1).Length();
-          if (t < len && t > 0)
-          {
-            min_dist_pnt = Pnt - N * (FLT)dist;
-            min_dist = dist;
-          }
-        }
+        if (Polly.Lines[i].LinesIntersect(Pnt, CurrPolyLastLineEnd(), &inter, FALSE) && dist < min_dist)
+          min_dist = dist, IsInters = TRUE;
       }
     };
 
@@ -386,11 +397,10 @@ BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result ) cons
       CheckIfLieOnSegment(polly);
     CheckIfLieOnSegment(CurrPoly);
 
-    if (min_dist == PlaceingRadius)
+    if (!IsInters)
       return FALSE;
-
     if (Result != nullptr)
-      *Result = min_dist_pnt;
+      *Result = inter;
 
     return TRUE;
   }

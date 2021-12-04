@@ -63,6 +63,9 @@
     <ClInclude Include="location_points_pool.h">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClInclude>
+    <ClInclude Include="input.h">
+      <Filter>Source Files\Render System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
