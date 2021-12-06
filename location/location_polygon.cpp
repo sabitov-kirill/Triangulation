@@ -4,21 +4,21 @@
 
 #include "location.h"
 
-/* Merge pollygons function.
+/* Merge polygons function.
  * ARGUMENTS:
- *   - pollygon to merge with:
- *       const pollygon &Polly1, const pollygon &Polly2;
- *   - pollygon to set merged one in:
- *       pollygon *Merged;
+ *   - polygon to merge with:
+ *       const polygon &Polly1, const polygon &Polly2;
+ *   - polygon to set merged one in:
+ *       polygon *Merged;
  * RETURNS: None.
  */
-VOID pollygon::Merge(const pollygon &Polly, pollygon *Merged) const
+VOID polygon::Merge(const polygon &Polly, polygon *Merged) const
 {
-  BOOL IsIntersection = FALSE;                      // Show wheather any segments in pollygons intersected or not.
-  std::map<size_t, std::vector<size_t>> InterEdjes; // Adjacnency list of edjes with start and end in pollygons segments intersection points
+  BOOL IsIntersection = FALSE;                      // Show wheather any segments in polygons intersected or not.
+  std::map<size_t, std::vector<size_t>> InterEdjes; // Adjacnency list of edjes with start and end in polygons segments intersection points
 
   // Fill adjacnency list of edjes list function
-  const auto IntersectPollygons = [&](const pollygon &PollyFirst, const pollygon &PollySeccond)
+  const auto IntersectPolygons = [&](const polygon &PollyFirst, const polygon &PollySeccond)
   {
     std::vector<size_t> prev_pnt_inters;
 
@@ -39,11 +39,12 @@ VOID pollygon::Merge(const pollygon &Polly, pollygon *Merged) const
         if (PollyFirst.Lines[i].Intersect(location::PointsPool[seg_to_inter.St], location::PointsPool[seg_to_inter.End], &res))
         {
           size_t index = location::PointsPool.Add(res);
+          IsIntersection = TRUE;
 
           // Add intersection point only if its not added already
           if (std::find(InterEdjes[curr_pnt_ind].begin(), InterEdjes[curr_pnt_ind].end(), index) == InterEdjes[curr_pnt_ind].end() &&
               std::find(current_pnt_inters.begin(), current_pnt_inters.end(), index) == current_pnt_inters.end())
-            current_pnt_inters.push_back(index), IsIntersection = TRUE;
+            current_pnt_inters.push_back(index);
         }
       }
 
@@ -57,7 +58,7 @@ VOID pollygon::Merge(const pollygon &Polly, pollygon *Merged) const
                   return CurrA.Length() < CurrB.Length();
                 });
 
-      // Add all segmetns as possible edjes of new pollygon
+      // Add all segmetns as possible edjes of new polygon
       for (size_t i = 0, cnt = current_pnt_inters.size(); i < cnt; i++)
       {
         if (i != cnt - 1)
@@ -80,9 +81,9 @@ VOID pollygon::Merge(const pollygon &Polly, pollygon *Merged) const
     }
   };
 
-  // Fillign possible edjes list for new pollygon
-  IntersectPollygons(*this, Polly);
-  IntersectPollygons(Polly, *this);
+  // Fillign possible edjes list for new polygon
+  IntersectPolygons(*this, Polly);
+  IntersectPolygons(Polly, *this);
 
   // Check if no intersections. Check all 3 cases:
   //   - first contains second; - return first
@@ -118,15 +119,15 @@ VOID pollygon::Merge(const pollygon &Polly, pollygon *Merged) const
       return;
     }
 
-    // First is near second. Create merged pollygon just by adding segments from second to first.
-    pollygon merged(*this);
+    // First is near second. Create merged polygon just by adding segments from second to first.
+    polygon merged(*this);
     for (const segment &seg : Polly.Lines)
       merged.Lines.push_back(seg);
     *Merged = merged;
     return;
   }
 
-  // Find minimum point in two pollygons to start merging from
+  // Find minimum point in two polygons to start merging from
   vec2 first_pnt(INFINITY);
   size_t first_pnt_ind = 0;
 
@@ -138,8 +139,46 @@ VOID pollygon::Merge(const pollygon &Polly, pollygon *Merged) const
     if (first_pnt > location::PointsPool[seg.St])
       first_pnt = location::PointsPool[seg.St], first_pnt_ind = seg.St;
 
-  // Find the most left point and add new segment to merged pollygon with end in that point
-  pollygon merged;
+  // Find the most left point and add new segment to merged polygon with end in that point
+  // polygon merged;
+  // 
+  // std::map<size_t, BOOL> visits;
+  // 
+  // for (const auto &edje: InterEdjes)
+  //   visits[edje.first] = FALSE;
+  // 
+  // size_t curr_pnt_ind = first_pnt_ind;
+  // do
+  // {
+  //   auto curr_vertex = InterEdjes.find(curr_pnt_ind);
+  //   vec2 curr_pnt = location::PointsPool[curr_pnt_ind];
+  // 
+  //   DBL max_angle = 0;
+  //   size_t max_angle_ind = curr_vertex->second[0];
+  // 
+  //   for (size_t i = 0, cnt = curr_vertex->second.size(); i < cnt; i++)
+  //   {
+  //     if (visits[curr_vertex->second[i]])
+  //       continue;
+  // 
+  //     vec2 next_pnt = location::PointsPool[curr_vertex->second[i]];
+  //     DBL angle = acos(curr_pnt.Normalizing() & next_pnt.Normalizing());
+  // 
+  //     vec3 cross = (vec3(curr_pnt, 0) % vec3(next_pnt, 0));
+  //     if (cross[2] < 0)
+  //       angle = 2 * mth::PI - angle;
+  // 
+  //     if (angle > max_angle)
+  //       max_angle = angle, max_angle_ind = curr_vertex->second[i];
+  //   }
+  // 
+  //   merged.Lines.push_back(segment(curr_pnt_ind, max_angle_ind));
+  //   visits[curr_pnt_ind] = TRUE;
+  //   curr_pnt_ind = max_angle_ind;
+  // } while (curr_pnt_ind != first_pnt_ind);
+
+  // Find the most left point and add new segment to merged polygon with end in that point
+  polygon merged;
   size_t curr_pnt_ind = first_pnt_ind, prev = -1;
   do
   {
@@ -164,16 +203,16 @@ VOID pollygon::Merge(const pollygon &Polly, pollygon *Merged) const
   } while (curr_pnt_ind != first_pnt_ind);
 
   *Merged = merged;
-} /* End of 'pollygon::Merge' function */
+} /* End of 'polygon::Merge' function */
 
-/* Check if point inside pollygon.
+/* Check if point inside polygon.
  * ARGUMENTS:
  *   - point to check:
  *       const vec3 &Pnt;
  * RETURNS:
- *   (BOOL) whether point in pollygon or not.
+ *   (BOOL) whether point in polygon or not.
  */
-BOOL pollygon::IsPointInside(const vec2 &Pnt) const
+BOOL polygon::IsPointInside(const vec2 &Pnt) const
 {
   INT cnt = 0;
   vec2 PntInfLine = Pnt + vec2(10000000, 0);
@@ -182,4 +221,4 @@ BOOL pollygon::IsPointInside(const vec2 &Pnt) const
     cnt += seg.Intersect(Pnt, PntInfLine);
 
   return cnt % 2 != 0;
-} /* End of 'pollygon::IsPointInside' function */
+} /* End of 'polygon::IsPointInside' function */

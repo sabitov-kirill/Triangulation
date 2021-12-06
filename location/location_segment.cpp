@@ -27,8 +27,9 @@ FLT segment::GetPointDistance( const vec2& Pnt ) const
 
   if (dist == 0)
     return Pnt.Distance(location::PointsPool[St]);
+
   return abs((location::PointsPool[End][0] - location::PointsPool[St][0]) * (location::PointsPool[St][1] - Pnt[1]) -
-    (location::PointsPool[St][0] - Pnt[0]) * (location::PointsPool[End][1] - location::PointsPool[St][1])) / dist;
+             (location::PointsPool[St][0] - Pnt[0]) * (location::PointsPool[End][1] - location::PointsPool[St][1])) / dist;
 } /* End of 'segment::GetPointLineDistance' function */
 
 /* Get location of a point in a plane relative to a straight line function.
@@ -43,9 +44,10 @@ FLT segment::GetPointDistance( const vec2& Pnt ) const
 INT segment::GetPointHalfPlaneLocation( const vec2& Pnt ) const
 {
   DBL cross_product = ((DBL)location::PointsPool[End][0] - (DBL)location::PointsPool[St][0]) * ((DBL)Pnt[1] - (DBL)location::PointsPool[St][1]) -
-    ((DBL)location::PointsPool[End][1] - (DBL)location::PointsPool[St][1]) * ((DBL)Pnt[0] - (DBL)location::PointsPool[St][0]);
-  return  cross_product > 0.00001 ? 1 :
-    cross_product < 0.00001 ? -1 : 0;
+                      ((DBL)location::PointsPool[End][1] - (DBL)location::PointsPool[St][1]) * ((DBL)Pnt[0] - (DBL)location::PointsPool[St][0]);
+
+  return  cross_product > 0.00001 ? 1  :
+          cross_product < 0.00001 ? -1 : 0;
 } /* End of 'segment::GetPointHalfPlane' function */
 
 /* Intersect two lines function.
@@ -59,14 +61,30 @@ INT segment::GetPointHalfPlaneLocation( const vec2& Pnt ) const
  */
 BOOL segment::Intersect( const vec2& P0, const vec2& P1, vec2* Result ) const
 {
+  DBL divider_t = (P0[0] - P1[0]) * (location::PointsPool[St][1] - location::PointsPool[End][1]) - (P0[1] - P1[1]) * (location::PointsPool[St][0] - location::PointsPool[End][0]);
+  DBL divider_s = (P0[0] - P1[0]) * (location::PointsPool[St][1] - location::PointsPool[End][1]) - (P0[1] - P1[1]) * (location::PointsPool[St][0] - location::PointsPool[End][0]);
+
+  // Lines are equal or parallel
+  if (divider_t == 0 || divider_s == 0)
+    // Then if at least one pair point of points are equal all onther are equal too
+    if (location::PointsPool[St] == P0 || location::PointsPool[St] == P1)
+    {
+      if (Result != nullptr)
+        *Result = P1;
+      return TRUE;
+    }
+    else
+      return FALSE;
+
   FLT
     t =
       ((P0[0] - location::PointsPool[St][0]) * (location::PointsPool[St][1] - location::PointsPool[End][1]) - (P0[1] - location::PointsPool[St][1]) * (location::PointsPool[St][0] - location::PointsPool[End][0])) /
-      ((P0[0] - P1[0]) * (location::PointsPool[St][1] - location::PointsPool[End][1]) - (P0[1] - P1[1]) * (location::PointsPool[St][0] - location::PointsPool[End][0])),
+      divider_t,
     s =
       ((P0[0] - location::PointsPool[St][0]) * (P0[1] - P1[1]) - (P0[1] - location::PointsPool[St][1]) * (P0[0] - P1[0])) /
-      ((P0[0] - P1[0]) * (location::PointsPool[St][1] - location::PointsPool[End][1]) - (P0[1] - P1[1]) * (location::PointsPool[St][0] - location::PointsPool[End][0]));
+      divider_s;
 
+  // Check if intersection lie between two points
   if ((t < 0 || t > 1 || s < 0 || s > 1))
     return FALSE;
 

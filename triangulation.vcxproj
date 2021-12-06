@@ -149,7 +149,7 @@
   <ItemGroup>
     <ClCompile Include="location\location.cpp" />
     <ClCompile Include="location\location_points_pool.cpp" />
-    <ClCompile Include="location\location_pollygon.cpp" />
+    <ClCompile Include="location\location_polygon.cpp" />
     <ClCompile Include="location\location_segment.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

@@ -8,9 +8,9 @@ class location_test : public render, private input, private location
 private:
   INT MouseWheel;
   BOOL
-    IsPerpendicular = FALSE,
-    IsSegmentStarted = FALSE,
-    IsPrimitiveStarted = FALSE;
+    IsPerpendicular = FALSE,  // Placing perpendicular segments mode flag
+    IsSegmentStarted = FALSE, // Flag, showing wheather first point of segment placed
+    IsPolygonStarted = FALSE; // Flag, showing wheather first segment of polygon placed
   std::pair<vec2, vec2> SegmentPreview;
 
   /* Translate pixel coordinates to 0-1.
@@ -33,14 +33,32 @@ private:
   {
     input::Response();
 
+    // Clear location
+    if (Keys[VK_CONTROL] && Keys[VK_MENU] && KeysClick['Z'])
+      location::Clear();
+
+    // Undo
+    if (Keys[VK_CONTROL] && KeysClick['Z'])
+      CurrPolyDestroyLastSegment();
+
     // Changin perpendicular segments building state
     if (KeysClick['Q'])
       IsPerpendicular = !IsPerpendicular;
 
+    // Moving points
+    if (Keys[VK_MBUTTON])
+      MovePoint(GetScreenCoord(Mx, My));
+    if (!Keys[VK_MBUTTON] && KeysOld[VK_MBUTTON])
+      MovePoint(GetScreenCoord(Mx, My), TRUE);
+
+    //
+    // Placing segments
+    //
+
     // Starting new segment
     if (Keys[VK_RBUTTON] && !KeysOld[VK_RBUTTON])
     {
-      if (IsPrimitiveStarted)
+      if (IsPolygonStarted)
         SegmentPreview.first = CurrPolyLastLineEnd();
       else
         SegmentPreview.first = GetScreenCoord(Mx, My);
@@ -48,20 +66,18 @@ private:
 
       IsSegmentStarted = TRUE;
     }
-
     // Moving end of started segment
     else if (Keys[VK_RBUTTON] && IsSegmentStarted)
     {
       SegmentPreview.second = GetScreenCoord(Mx, My);
-      if (IsPrimitiveStarted && IsPerpendicular)
+      if (IsPolygonStarted && IsPerpendicular)
         SegmentPreview.second = CurrPolyGetPerpPoint(SegmentPreview.second);
       FindPoint(SegmentPreview.second, TRUE, &SegmentPreview.second);
     }
-
     // End segment
     else if (!Keys[VK_RBUTTON] && KeysOld[VK_RBUTTON])
     {
-      IsPrimitiveStarted = !CurrPolyPlaceSegment(SegmentPreview.second, SegmentPreview.first);
+      IsPolygonStarted = !CurrPolyPlaceSegment(SegmentPreview.second, SegmentPreview.first);
       IsSegmentStarted = FALSE;
     }
   } /* End of 'Response' fnuction */

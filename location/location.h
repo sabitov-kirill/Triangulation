@@ -3,7 +3,7 @@
 
 #include "location_points_pool.h"
 
-/* Pollygon segment class. */
+/* Polygon segment class. */
 class segment
 {
 public:
@@ -56,54 +56,54 @@ public:
   BOOL Intersect( const vec2 &P0, const vec2 &P1, vec2 *Result = nullptr ) const;
 }; /* end of 'segment' class */
 
-/* Pollygon class. */
-class pollygon
+/* Polygon class. */
+class polygon
 {
 public:
-  std::vector<segment> Lines; // Pollygon side lines container
+  std::vector<segment> Lines; // Polygon side lines container
 
-  /* Merge pollygons function.
+  /* Merge polygons function.
    * ARGUMENTS:
-   *   - pollygon to merge with:
-   *       const pollygon &Polly1, const pollygon &Polly2;
-   *   - pollygon to set merged one in:
-   *       pollygon *Merged;
+   *   - polygon to merge with:
+   *       const polygon &Polly1, const polygon &Polly2;
+   *   - polygon to set merged one in:
+   *       polygon *Merged;
    * RETURNS: None.
    */
-  VOID Merge( const pollygon &Polly, pollygon *Merged ) const;
+  VOID Merge( const polygon &Polly, polygon *Merged ) const;
 
-  /* Check if point inside pollygon.
+  /* Check if point inside polygon.
    * ARGUMENTS:
    *   - point to check:
    *       const vec3 &Pnt;
    * RETURNS:
-   *   (BOOL) whether point in pollygon or not.
+   *   (BOOL) whether point in polygon or not.
    */
   BOOL IsPointInside( const vec2 &Pnt ) const;
-}; /* end of 'pollygon' struct */
+}; /* end of 'polygon' struct */
 
 /* Location representation class. */
 class location
 {
 private:
   friend class segment;
-  friend class pollygon;
+  friend class polygon;
 
-  /* Currently editing pollygon structure. */
-  struct current_pollygon : pollygon
+  /* Currently editing polygon structure. */
+  struct current_polygon : polygon
   {
     BOOL IsEditing = 0;   // Displays if first segment of primitive added
-    size_t Start = 0;     // Index of first point in pollygon
-    BOOL ShouldMerge = 1; // Displays should pollygon be merged after closing
-  }; /* end of 'current_pollygon' struct */
+    size_t Start = 0;     // Index of first point in polygon
+    BOOL ShouldMerge = 1; // Displays should polygon be merged after closing
+  }; /* end of 'current_polygon' struct */
 
   static points_pool PointsPool;   // All location points pool
   const DBL PlaceingRadius = 0.03; // Points  for segments placment radius
-  current_pollygon CurrPoly {};    // Currently editing pollygon
+  current_polygon CurrPoly {};    // Currently editing polygon
 
 public:
   // For test public, remove later
-  std::vector<pollygon> Walls; // Location walls
+  std::vector<polygon> Walls; // Location walls
 
   //
   // Points pool functions
@@ -146,14 +146,44 @@ public:
    */
   size_t PlacePoint( const vec2 &Pnt, BOOL ConnectToLines );
 
+  /* Point moving function.
+   * ARGUMENTS:
+   *   - point possition (start possition at first call):
+   *       const vec2 &Point;
+   *   - end flag, if equals 0 end moving.
+   * RETURNS: None.
+   */
+  VOID MovePoint( const vec2 &Point, BOOL IsEnd = FALSE)
+  {
+    static size_t Index;
+    static BOOL IsMoveStarted;
+
+    if (IsEnd)
+    {
+      IsMoveStarted = FALSE;
+      Index = -1;
+      return;
+    }
+
+    if (!IsMoveStarted)
+    {
+      if (!FindPoint(Point, FALSE, &Index))
+        return;
+      IsMoveStarted = TRUE;
+    }
+
+    if (Index != -1)
+      PointsPool[Index] = Point;
+  } /* End of 'MovePoint' function */
+
   //
-  // Current pollygon functions
+  // Current polygon functions
   //
 
-  /* Get index of end point of last segment in current pollygon function.
+  /* Get index of end point of last segment in current polygon function.
    * ARGUMENTS: None.
    * RETURNS:
-   *   (vec2) end point of last segment in current pollygon.
+   *   (vec2) end point of last segment in current polygon.
    */
   size_t CurrPolyLastLineEndIndex(VOID) const
   {
@@ -163,52 +193,52 @@ public:
     return 0;
   } /* End of 'GetLastLineEndIndex' function */
 
-  /* Get end point of last segment in current pollygon function.
+  /* Get end point of last segment in current polygon function.
    * ARGUMENTS: None.
    * RETURNS:
-   *   (vec2) end point of last segment in current pollygon.
+   *   (vec2) end point of last segment in current polygon.
    */
   vec2 CurrPolyLastLineEnd( VOID ) const
   {
     return PointsPool[CurrPolyLastLineEndIndex()];
   } /* End of 'GetLastLineEnd' function */
 
-  /* Get start point of last segment in current pollygon function.
+  /* Get start point of last segment in current polygon function.
    * ARGUMENTS: None.
    * RETURNS:
-   *   (vec2) end point of last segment in current pollygon.
+   *   (vec2) end point of last segment in current polygon.
    */
   size_t CurrPolyLastLineStartIndex( VOID ) const
   {
     return CurrPoly.Lines[CurrPoly.Lines.size() - 1].St;
   } /* End of 'GetLastLineStart' function */
 
-  /* Get start point of last segment in current pollygon function.
+  /* Get start point of last segment in current polygon function.
    * ARGUMENTS: None.
    * RETURNS:
-   *   (vec2) end point of last segment in current pollygon.
+   *   (vec2) end point of last segment in current polygon.
    */
   vec2 CurrPolyLastLineStart( VOID ) const
   {
     return PointsPool[CurrPolyLastLineStartIndex()];
   } /* End of 'GetLastLineStart' function */
 
-  /* Get count of lines in current pollygon.
+  /* Get count of lines in current polygon.
    * ARGUMENTS: None.
    * RETURNS:
-   *   (size_t) count of lines in current pollygon.
+   *   (size_t) count of lines in current polygon.
    */
   size_t CurrPolyLinesSize( VOID ) const
   {
     return CurrPoly.Lines.size();
   } /* End of 'GetLinesSize' function */
 
-  /* Add segment to current pollygon function.
+  /* Add segment to current polygon function.
    * ARGUMENTS:
    *   - point of line end:
    *       const vec2 &PntEnd;
    * RETURNS:
-   *   (BOOL) whether added segment closed current pollygon.
+   *   (BOOL) whether added segment closed current polygon.
    */
   BOOL CurrPolyPlaceSegment( const vec2 &PntEnd, const vec2 &PntSt = {0} );
 
@@ -241,7 +271,7 @@ public:
     return norm;
   } /* End of 'CurrPolyGetPerpPoint' function */
 
-  /* Destroy last segment in current pollygon function.
+  /* Destroy last segment in current polygon function.
    * ARGUMENTS: None.
    * RETURNS: None.
    */
@@ -253,14 +283,20 @@ public:
     if (p > 2 && p > l + 2 && CurrPolyLastLineEndIndex() == p - 1)
       PointsPool.Points.pop_back();
 
-    // Delete segment
     if (l > 0)
+    {
+      // Delete segment
       CurrPoly.Lines.pop_back();
+
+      // If last existing segment deleted checnge editing mode
+      if (CurrPoly.Lines.size() == 0)
+        CurrPoly.IsEditing = FALSE;
+    }
   } /* End of 'DestroyLastSegment' function */
 
-  /* Set current pollygon close mode.
+  /* Set current polygon close mode.
    * ARGUMENTS:
-   *   - should pollygon be merged with previous while closing:
+   *   - should polygon be merged with previous while closing:
    *       BOOL ShouldMerge;
    * RETURNS: None.
    */
@@ -275,6 +311,20 @@ public:
    * RETURNS: None.
    */
   VOID OptimizePointsPool( VOID );
+
+  /* Clear location function.
+   * ARGUMENTS: None.
+   * RETURNS: None.
+   */
+  VOID Clear(VOID)
+  {
+    PointsPool.Points.clear();
+    Walls.clear();
+    CurrPoly.Lines.clear();
+    CurrPoly.Start = 0;
+    CurrPoly.IsEditing = 0;
+    CurrPoly.ShouldMerge = 1;
+  } /* End of 'Clear' function */
 
   /* Draw wall location function.
    * ARGUMENTS: None.

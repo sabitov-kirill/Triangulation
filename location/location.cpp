@@ -39,7 +39,7 @@ BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result ) cons
   DBL min_dist = PlaceingRadius;
 
   // Check if point lies on one of polygon's segments function.
-  const auto PointOnPollyogn = [&]( const pollygon &Polly )
+  const auto PointOnPollyogn = [&]( const polygon &Polly )
   {
     for (size_t i = 0, cnt = Polly.Lines.size(); i < cnt; i++)
     {
@@ -51,14 +51,14 @@ BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result ) cons
 
       // Calculate cormal to the segment
       vec2 N = -vec2(Line[1], -Line[0]).Normalize() * (SHORT)Polly.Lines[i].GetPointHalfPlaneLocation(Pnt);
+      DBL dist = N & (Pnt - L1);
 
       // Check if point line in placing radius to the segment
-      DBL dist = N & (Pnt - L1);
       if (dist < min_dist)
       {
-        vec2 inter_test = Pnt - N * (FLT)dist;
-        if ((L2 - L1).Length() > (L2 - inter_test).Length())
-          inter = inter_test, min_dist = dist, is_inter = TRUE;
+        DBL x = Line & (L2 - Pnt) / Line.Length();
+        if (x > 0 && x < Line.Length())
+          min_dist = dist, is_inter = TRUE, inter = L2 - Line.Normalize() * x;
       }
     }
   };
@@ -125,14 +125,14 @@ size_t location::PlacePoint( const vec2 &Pnt, BOOL ConnectToLines )
  *   - point of line end:
  *       const vec2 &PntEnd;
  * RETURNS:
- *   (BOOL) whether added segment closed current pollygon.
+ *   (BOOL) whether added segment closed current polygon.
  */
 BOOL location::CurrPolyPlaceSegment( const vec2 &PntEnd, const vec2 &PntSt )
 {
   size_t SegmentStart, SegmentEnd;
   BOOL IsClosed = FALSE;
 
-  // Adding segments to exitsting pollygon
+  // Adding segments to exitsting polygon
   if (CurrPoly.IsEditing)
   {
     SegmentStart = CurrPoly.Lines[CurrPoly.Lines.size() - 1].End;
@@ -145,15 +145,15 @@ BOOL location::CurrPolyPlaceSegment( const vec2 &PntEnd, const vec2 &PntSt )
       // If segment ends on its start point closing them.
       if (SegmentEnd == CurrPoly.Start)
       {
-        // Mergin current pollygon with existing
+        // Mergin current polygon with existing
         if (Walls.size() == 0)
           Walls.push_back(CurrPoly);
         else if (CurrPoly.ShouldMerge)
           CurrPoly.Merge(Walls[0], &Walls[0]);
 
-        // Reseting current pollygon, but save close mode.
+        // Reseting current polygon, but save close mode.
         BOOL should_merge = CurrPoly.ShouldMerge;
-        CurrPoly = current_pollygon();
+        CurrPoly = current_polygon();
         CurrPoly.ShouldMerge = should_merge;
         return TRUE;
       }
@@ -165,7 +165,7 @@ BOOL location::CurrPolyPlaceSegment( const vec2 &PntEnd, const vec2 &PntSt )
       CurrPoly.Lines.push_back(segment(SegmentStart, SegmentEnd));
     }
   }
-  // Adding first segment to pollygon
+  // Adding first segment to polygon
   else
   {
     SegmentStart = PlacePoint(PntSt, TRUE);
@@ -180,9 +180,9 @@ BOOL location::CurrPolyPlaceSegment( const vec2 &PntEnd, const vec2 &PntSt )
   return FALSE;
 } /* End of 'location::CurrPolyPlaceSegment' function */
 
-/* Set current pollygon close mode.
+/* Set current polygon close mode.
  * ARGUMENTS:
- *   - should pollygon be merged with previous while closing:
+ *   - should polygon be merged with previous while closing:
  *       BOOL ShouldMerge;
  * RETURNS: None.
  */
@@ -218,7 +218,7 @@ VOID DrawCircle( GLfloat X, GLfloat Y, GLfloat Radius )
  */
 VOID location::Draw( VOID ) const
 {
-  const auto DrawPolly = [&]( const pollygon &Wall, BOOL IsCurrent )
+  const auto DrawPolly = [&]( const polygon &Wall, BOOL IsCurrent )
   {
     size_t cnt = Wall.Lines.size();
     size_t i;

@@ -77,7 +77,7 @@
     <ClCompile Include="location\location_points_pool.cpp">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClCompile>
-    <ClCompile Include="location\location_pollygon.cpp">
+    <ClCompile Include="location\location_polygon.cpp">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClCompile>
     <ClCompile Include="location\location_segment.cpp">
