@@ -83,6 +83,8 @@ public:
    */
   size_t Add( const vec2 &Pnt, DBL CheckRadius = Epsilon );
 
+  VOID ClearPP( VOID );
+
   /* Add point to pool function.
    * ARGUMENTS:
    *   - point to add:

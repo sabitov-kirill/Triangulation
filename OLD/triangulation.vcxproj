@@ -43,14 +43,14 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -122,11 +122,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>Z:\trian\triangulation\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,18 +148,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="location\location.cpp" />
-    <ClCompile Include="location\location_points_pool.cpp" />
-    <ClCompile Include="location\location_pollygon.cpp" />
-    <ClCompile Include="location\location_segment.cpp" />
+    <ClCompile Include="location.cpp" />
+    <ClCompile Include="location_points_pool.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="animation\input.h" />
-    <ClInclude Include="animation\render.h" />
     <ClInclude Include="def.h" />
-    <ClInclude Include="location\location.h" />
-    <ClInclude Include="location\location_points_pool.h" />
+    <ClInclude Include="location_points_pool.h" />
     <ClInclude Include="mth\mth.h" />
     <ClInclude Include="mth\mthdef.h" />
     <ClInclude Include="mth\mth_camera.h" />
@@ -168,6 +164,8 @@
     <ClInclude Include="mth\mth_vec2.h" />
     <ClInclude Include="mth\mth_vec3.h" />
     <ClInclude Include="mth\mth_vec4.h" />
+    <ClInclude Include="render.h" />
+    <ClInclude Include="location.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

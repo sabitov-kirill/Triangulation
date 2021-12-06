@@ -33,19 +33,6 @@ public:
    */
   FLT GetPointDistance( const vec2 &Pnt ) const;
 
-  /* Check if point lie on segment. If set Check radius check in that area.
-   * ARGUMENTS:
-   *   - point to check:
-   *       const vec2 &Pnt;
-   *   - checking area radius:
-   *       DBL CheckRadius;
-   *   - variable to set point on segment if cheking radius was given:
-   *       vec2 *Result;
-   * RETURNS:
-   *   (DBL) distance to the line. If no lines nearby - 0.
-   */
-  DBL IsPointOnSegment( const vec2 &Pnt, DBL CheckRadius = 0, vec2 *Result = nullptr ) const;
-
   /* Get location of a point in a plane relative to a straight line function.
    * ARGUMENTS:
    *   - point:
@@ -57,29 +44,16 @@ public:
    */
   INT GetPointHalfPlaneLocation( const vec2 &Pnt ) const;
 
-  /* Get location of a point in a plane relative to a straight line function.
-   * ARGUMENTS:
-   *   - point:
-   *       const vec2 &Pnt;
-   * RETURNS:
-   *   (INT) -1 - point is on the right half-plane,
-   *          0 - point is on the line,
-   *          1 - point in on the left half-plane.
-   */
-  static INT GetPointHalfPlaneLocation( const vec2 &Pnt, const vec2 &L1, const vec2 &L2 );
-
   /* Intersect two lines function.
    * ARGUMENTS:
    *   - two points, setting line to intersect with:
    *       const vec2 &P0, const vec2 &P1;
    *   - variable to set result in:
    *       vec2 *Result;
-   *   - should check length of intersecting lines or not:
-   *       BOOL CheckLength;
    * RETURNS:
    *   (BOOL) Whether lines intersected or not.
    */
-  BOOL LinesIntersect( const vec2 &P0, const vec2 &P1, vec2 *Result = nullptr, BOOL CheckLength = TRUE ) const;
+  BOOL Intersect( const vec2 &P0, const vec2 &P1, vec2 *Result = nullptr ) const;
 }; /* end of 'segment' class */
 
 /* Pollygon class. */
@@ -124,7 +98,7 @@ private:
   }; /* end of 'current_pollygon' struct */
 
   static points_pool PointsPool;   // All location points pool
-  const DBL PlaceingRadius = 0.1; // Points  for segments placment radius
+  const DBL PlaceingRadius = 0.03; // Points  for segments placment radius
   current_pollygon CurrPoly {};    // Currently editing pollygon
 
 public:
@@ -253,11 +227,11 @@ public:
       last_line = vec2(PointsPool[last_seg.End][0] - PointsPool[last_seg.St][0],
                        PointsPool[last_seg.End][1] - PointsPool[last_seg.St][1]);
 
+    // Build normal by rotating segment to 90 or 270 degrees
     if (last_seg.GetPointHalfPlaneLocation(Point) == 1)
       norm = vec2(-last_line[1], last_line[0]);
     else
       norm = vec2(last_line[1], -last_line[0]);
-
     norm.Normalize();
 
     // Set length of normal

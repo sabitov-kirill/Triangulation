@@ -1,7 +1,7 @@
 #ifndef __input_h_
 #define __input_h_
 
-#include "def.h"
+#include "../def.h"
 
 #pragma comment(lib, "winmm")
 
@@ -82,7 +82,7 @@ public:
   VOID Response( VOID )
   {
     memcpy(KeysOld, Keys, 256);
-    GetKeyboardState(Keys);
+    BOOL a = GetKeyboardState(Keys);
     for (INT i = 0; i < 256; i++)
     {
       Keys[i] >>= 7;

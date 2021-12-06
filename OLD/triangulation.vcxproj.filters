@@ -16,11 +16,11 @@
     <Filter Include="Source Files\Math Implementation">
       <UniqueIdentifier>{7cca8cdf-5a0f-4f69-ac18-a3e2273a3295}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Render System">
+      <UniqueIdentifier>{a58f7dcb-3f65-43d5-be8d-954cd22ab314}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\Location Editor Handle">
       <UniqueIdentifier>{22c8b49e-9d0c-43c8-8f08-de20fd6887a8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Animation System">
-      <UniqueIdentifier>{a58f7dcb-3f65-43d5-be8d-954cd22ab314}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -54,33 +54,24 @@
     <ClInclude Include="def.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="location\location.h">
+    <ClInclude Include="render.h">
+      <Filter>Source Files\Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="location.h">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClInclude>
-    <ClInclude Include="location\location_points_pool.h">
+    <ClInclude Include="location_points_pool.h">
       <Filter>Source Files\Location Editor Handle</Filter>
-    </ClInclude>
-    <ClInclude Include="animation\input.h">
-      <Filter>Source Files\Animation System</Filter>
-    </ClInclude>
-    <ClInclude Include="animation\render.h">
-      <Filter>Source Files\Animation System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="location\location.cpp">
+    <ClCompile Include="location.cpp">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClCompile>
-    <ClCompile Include="location\location_points_pool.cpp">
-      <Filter>Source Files\Location Editor Handle</Filter>
-    </ClCompile>
-    <ClCompile Include="location\location_pollygon.cpp">
-      <Filter>Source Files\Location Editor Handle</Filter>
-    </ClCompile>
-    <ClCompile Include="location\location_segment.cpp">
+    <ClCompile Include="location_points_pool.cpp">
       <Filter>Source Files\Location Editor Handle</Filter>
     </ClCompile>
   </ItemGroup>

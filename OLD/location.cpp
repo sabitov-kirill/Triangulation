@@ -388,8 +388,9 @@ BOOL location::FindPoint( const vec2 &Pnt, BOOL FindOnLines, vec2 *Result ) cons
         vec2 N = -vec2(Line[1], -Line[0]).Normalize() * Polly.Lines[i].GetPointHalfPlaneLocation(Pnt);
         DBL dist = N & (Pnt - L1);
 
-        if (Polly.Lines[i].LinesIntersect(Pnt, CurrPolyLastLineEnd(), &inter, FALSE) && dist < min_dist)
-          min_dist = dist, IsInters = TRUE;
+        if (CurrPolyLinesSize() > 0)
+          if (Polly.Lines[i].LinesIntersect(Pnt, CurrPolyLastLineEnd(), &inter) && dist < min_dist)
+            min_dist = dist, IsInters = TRUE;
       }
     };
 
@@ -578,3 +579,24 @@ VOID location::Draw( VOID ) const
     DrawPolly(wall, FALSE);
   DrawPolly(CurrPoly, TRUE);
 } /* End pf 'location::Draw' function */
+
+VOID location::CurrPolyMovePoint( vec2 &Point, BOOL flag )
+{
+  static size_t Index;
+  static BOOL IsMove;
+
+  if (!flag)
+  {
+    IsMove = FALSE;
+    Index = -1;
+    return;
+  }
+
+  if (!IsMove && !FindPoint(Point, FALSE, &Index))
+    return;
+
+  if (Index != -1)
+    PointsPool[Index] = Point;
+
+  IsMove = TRUE;
+}

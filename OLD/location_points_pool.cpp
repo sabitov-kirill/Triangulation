@@ -1,6 +1,6 @@
 #include "location_points_pool.h"
 
-const DBL points_pool::Epsilon = 0.00001;            // Epsilon of point finding
+const DBL points_pool::Epsilon = 0.001;            // Epsilon of point finding
 const DBL points_pool::Epsilon2 = Epsilon * Epsilon; // Epsilon sqared
 
 /* Get point index in points pool.
@@ -104,6 +104,11 @@ size_t points_pool::Add( const vec2 &Pnt, DBL CheckRadius )
   Points.push_back(Pnt);
   return Points.size() - 1;
 } /* End of 'points_pool::AddPoint' function */
+
+VOID points_pool::ClearPP( VOID )
+{
+  Points.clear();
+}
 
 /* Add point to pool function.
  * ARGUMENTS:
